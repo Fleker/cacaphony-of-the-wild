@@ -1,68 +1,145 @@
 window.onload = function() {
 	//start crafty
-	Crafty.init(400, 320);
+	Crafty.init(1024, 592);
 	Crafty.canvas.init();
 
 	//turn the sprite map into usable components
-	Crafty.sprite(16, "images/sprite.png", {
-		grass1: [0,0],
-		grass2: [1,0],
-		grass3: [2,0],
-		grass4: [3,0],
-		flower: [0,1],
-		bush1: [0,2],
-		bush2: [1,2],
-		player: [0,3]
-	});
+	Crafty.sprite(16, "images/roguelikeSheet_transparent.png", {
+        waterBody:      [0, 0],
+        waterBody2:     [1, 0],
+        waterGrassTL:   [2, 0],
+        waterGrassTM:   [3, 0],
+        waterGrassTR:   [4, 0],
+        grassBody:      [5, 0],
+        clayBody:       [6, 0],
+        stoneBody:      [7, 0],
+        sandBody:       [8, 0],
+        stoneBody2:     [9, 0],
+        redStallM:      [10, 0],
+        greenStallM:    [11, 0],
+        fireplaceNone:  [12, 0],
+        fireplace:      [13, 0], // and 14
+        anvil:          [15, 0],
+        waterGrassML:   [2, 1],
+        waterGrassMM:   [3, 1],
+        waterGrassMR:   [4, 1],
+        waterGrassBL:   [2, 2],
+        waterGrassBM:   [3, 2],
+        waterGrassBR:   [4, 2],
+        lilyPad:        [25, 11],
+        flowerBlue:     [28, 9],
+        flowerRed:      [29, 9],
+        flowerPurple:   [30, 9],
+        flowerWhite:    [31, 9],
+	}, 1, 1, 0);
+
+    Crafty.sprite(16, "images/character-hero.png", {
+        char_hero: [1, 2]
+    });
+
+    // Dumb fill of entire row
+    function fill(type) {
+        var fillarray = [];
+        for (var i = 0; i < 64; i++) {
+            fillarray.push(type);
+        }
+        return fillarray;
+    }
+
+    // Supply array of objects, with type and count, and it'll generate the row.
+    function smartFill(obj) {
+        var args = Array.prototype.slice.call(arguments, 0);
+        var fillarray = [];
+        for (var i in args) {
+            for (var j = 0; j < args[i].count; j++) {
+                fillarray.push(args[i].type);
+            }
+        }
+        return fillarray;
+    }
+
+    // Maps
+    let maps = {
+        test: [
+            [
+                fill("grassBody"),
+                smartFill({type: "waterGrassTM", count: 5}, {type: "waterGrassTR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
+                smartFill({type: "waterGrassBM", count: 5}, {type: "waterGrassBR", count: 1}, {type: "grassBody", count: 59}),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+                fill("grassBody"),
+            ], [
+                [],
+                [],
+                [],
+                [undefined, undefined, undefined, undefined, "lilyPad"],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [undefined, "flowerWhite", undefined, "flowerBlue", undefined, "flowerWhite"]
+            ]
+        ]
+    };
 
 	//method to randomy generate the map
-	function generateWorld() {
-		//generate the grass along the x-axis
-		for(var i = 0; i < 25; i++) {
-			//generate the grass along the y-axis
-			for(var j = 0; j < 20; j++) {
-				grassType = Crafty.math.randomInt(1, 4);
-				Crafty.e("2D, Canvas, grass"+grassType)
-					.attr({x: i * 16, y: j * 16});
-
-				//1/50 chance of drawing a flower and only within the bushes
-				if(i > 0 && i < 24 && j > 0 && j < 19 && Crafty.math.randomInt(0, 50) > 49) {
-					Crafty.e("2D, DOM, flower, solid, SpriteAnimation")
-						.attr({x: i * 16, y: j * 16})
-						.animate("wind", 0, 1, 3)
-						.animate("wind", 80, -1);
-				}
-			}
-		}
-
-		//create the bushes along the x-axis which will form the boundaries
-		for(var i = 0; i < 25; i++) {
-			Crafty.e("2D, Canvas, wall_top, solid, bush"+Crafty.math.randomInt(1,2))
-				.attr({x: i * 16, y: 0, z: 2});
-			Crafty.e("2D, DOM, wall_bottom, solid, bush"+Crafty.math.randomInt(1,2))
-				.attr({x: i * 16, y: 304, z: 2});
-		}
-
-		//create the bushes along the y-axis
-		//we need to start one more and one less to not overlap the previous bushes
-		for(var i = 1; i < 19; i++) {
-			Crafty.e("2D, DOM, wall_left, solid, bush"+Crafty.math.randomInt(1,2))
-				.attr({x: 0, y: i * 16, z: 2});
-			Crafty.e("2D, Canvas, wall_right, solid, bush"+Crafty.math.randomInt(1,2))
-				.attr({x: 384, y: i * 16, z: 2});
-		}
+	function generateWorld(map) {
+        for (z in maps[map]) {
+            for (y in maps[map][z]) {
+                for (x in maps[map][z][y]) {
+//                    console.log(x, y, z);
+                    Crafty.e("2D, DOM, solid, " + maps[map][z][y][x])
+                        .attr({x: x * 16, y: y * 16, z: z});
+                }
+            }
+        }
 	}
 
 	//the loading screen that will display while our assets load
 	Crafty.scene("loading", function() {
 		//load takes an array of assets and a callback when complete
-		Crafty.load(["images/sprite.png"], function () {
+		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png"], function () {
 			Crafty.scene("main"); //when everything is loaded, run the main scene
 		});
 
 		//black background with some loading text
 		Crafty.background("#000");
-		Crafty.e("2D, DOM, Text").attr({w: 100, h: 20, x: 150, y: 120})
+		Crafty.e("2D, DOM, Text").attr({w: 100, h: 298, x: 450, y: 120})
 			.text("Loading")
 			.css({"text-align": "center"});
 	});
@@ -71,16 +148,16 @@ window.onload = function() {
 	Crafty.scene("loading");
 
 	Crafty.scene("main", function() {
-		generateWorld();
+		generateWorld('test');
 
 		Crafty.c('Hero', {
 			init: function() {
 					//setup animations
-					this.requires("SpriteAnimation, Collision")
-					.animate("walk_left", 6, 3, 8)
-					.animate("walk_right", 9, 3, 11)
-					.animate("walk_up", 3, 3, 5)
-					.animate("walk_down", 0, 3, 2)
+					this.requires("SpriteAnimation, Collision, anvil")
+					.animate("walk_left", 0, 2, 2)
+					.animate("walk_right", 0, 1, 2)
+					.animate("walk_up", 0, 3, 2)
+					.animate("walk_down", 0, 0, 2)
 					//change direction when a direction change event is received
 					.bind("NewDirection",
 						function (direction) {
@@ -127,8 +204,8 @@ window.onload = function() {
 		});
 
 		//create our player entity with some premade components
-		player = Crafty.e("2D, Canvas, player, RightControls, Hero, Animate, Collision")
-			.attr({x: 160, y: 144, z: 1})
+		player = Crafty.e("2D, DOM, solid, flowerPurple, RightControls, Animate, SpriteAnimation, Collision")
+			.attr({x: 512, y: 256, z: 1})
 			.rightControls(1);
 	});
 };
