@@ -33,8 +33,8 @@ window.onload = function() {
         flowerWhite:    [31, 9],
 	}, 1, 1, 0);
 
-    Crafty.sprite(16, "images/character-hero.png", {
-        char_hero: [1, 2]
+    Crafty.sprite(24, 32, "images/character-hero.png", {
+        char_hero: [0, 0]
     });
 
     // Dumb fill of entire row
@@ -59,6 +59,7 @@ window.onload = function() {
     }
 
     // Maps
+    let impassableTiles = ["waterBody", "waterGrassTM"];
     let maps = {
         test: [
             [
@@ -122,8 +123,15 @@ window.onload = function() {
         for (z in maps[map]) {
             for (y in maps[map][z]) {
                 for (x in maps[map][z][y]) {
-//                    console.log(x, y, z);
-                    Crafty.e("2D, DOM, solid, " + maps[map][z][y][x])
+                    let tile = maps[map][z][y][x];
+                    var classes = "2D, Canvas, " + tile;
+                    if (impassableTiles.indexOf(tile) > -1) {
+                        classes += ", impassable";
+                    }
+                    if (z == 1) {
+                        classes += ", solid";
+                    }
+                    Crafty.e(classes)
                         .attr({x: x * 16, y: y * 16, z: z});
                 }
             }
@@ -153,11 +161,11 @@ window.onload = function() {
 		Crafty.c('Hero', {
 			init: function() {
 					//setup animations
-					this.requires("SpriteAnimation, Collision, anvil")
-					.animate("walk_left", 0, 2, 2)
+					this.requires("SpriteAnimation, Collision, char_hero")
+					.animate("walk_left", 0, 3, 2)
 					.animate("walk_right", 0, 1, 2)
-					.animate("walk_up", 0, 3, 2)
-					.animate("walk_down", 0, 0, 2)
+					.animate("walk_up", 0, 0, 2)
+					.animate("walk_down", 0, 2, 2)
 					//change direction when a direction change event is received
 					.bind("NewDirection",
 						function (direction) {
@@ -183,7 +191,7 @@ window.onload = function() {
 					})
 					// A rudimentary way to prevent the user from passing solid areas
 					.bind('Moved', function(from) {
-						if(this.hit('solid') && from.z >= 1){
+						if(this.hit('solid') || this.hit('impassable')){
 							this.attr({x: from.x, y:from.y});
 						}
 					});
