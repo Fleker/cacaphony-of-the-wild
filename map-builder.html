@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>	<script type="text/javascript" src="http://craftyjs.com/release/0.5.4/crafty.js"></script>
+	<script type="text/javascript" src="js/main.js"></script>
+	<title>Tutorial</title>
+	<style>
+	body, html { margin:0; padding: 0; font-family:Arial; font-size:11px }
+	#cr-stage { border:2px solid black; margin:5px auto; color:white }
+	</style>
+
+    <script>
+        window.onload = function() {
+            //start crafty
+            Crafty.init(1024, 592);
+            Crafty.canvas.init();
+
+            //the loading screen that will display while our assets load
+            Crafty.scene("loading", function() {
+                //load takes an array of assets and a callback when complete
+                Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png"], function () {
+                    Crafty.scene("main"); //when everything is loaded, run the main scene
+                });
+
+                //black background with some loading text
+                Crafty.background("#000");
+                Crafty.e("2D, DOM, Text").attr({w: 100, h: 298, x: 450, y: 120})
+                    .text("Loading")
+                    .css({"text-align": "center"});
+            });
+
+            //automatically play the loading scene
+            Crafty.scene("loading");
+
+            Crafty.scene("main", function() {
+                document.getElementById('cr-stage').onclick = function(e) {
+                    var tilesheet = document.getElementById('tilesheet');
+                    var px = parseInt(tilesheet.dataset.px);
+                    var py = parseInt(tilesheet.dataset.py);
+                    var xy = parseInt(tilesheet.dataset.xy);
+                    console.log(this, e);
+                    var tileX = Math.floor(x / (xy + px));
+                    var tileY = Math.floor(y / (xy + py));
+                    var x2 = tileX * (xy + px);
+                    var y2 = tileY * (xy + py);
+                    var tile = "0-0";
+                    var classes = "2D, Canvas, " + tile;
+                    var x = (e.clientX - this.offsetLeft) * (px + xy);
+                    var y = (e.clientY - this.offsetTop) * (py + xy);
+                    if (!map[layer]) {
+                        map[layer] = [[]];
+                    }
+                    if (!map[layer][tileY]) {
+                        map[layer][tileY] = [];
+                    }
+                    map[layer][tileY][tileX] = tile;
+                    Crafty.e(classes)
+                        .attr({x: x2, y: y2, z: layer});
+                }
+            });
+        };
+    </script>
+</head>
+<body>
+    <button onclick="generate">Generate Map</button>
+    <button onclick="import">Import Map</button>
+    <button onclick="load()">Load Spritesheet</button>
+    <button id='btn_layer' onclick="switchlayer()">Layer 0</button>
+
+    <div id='tiles'>
+        Selected: <div id='selected' style='height:16px;width:16px'></div><br>
+        <img id='tilesheet' />
+    </div>
+
+    <script>
+        layer = 0;
+        map = [[[]]];
+
+        function switchlayer() {
+            layer = parseInt(prompt("Layer?", 0));
+            document.getElementById('btn_layer').innerHTML = "Layer " + layer;
+        }
+
+        document.getElementById('tilesheet').onclick = function(e) {
+            console.log(this, e);
+            var x = (e.clientX - this.offsetLeft);
+            var y = (e.clientY - this.offsetTop);
+            var xy = parseInt(this.dataset.xy);
+            var px = parseInt(this.dataset.px);
+            var py = parseInt(this.dataset.py);
+            var tileX = Math.floor(x / (xy + px));
+            var tileY = Math.floor(y / (xy + py));
+            console.log(x, y, tileX, tileY);
+            var x2 = tileX * (xy + px);
+            var y2 = tileY * (xy + py);
+            document.getElementById('selected').style.background = 'url("' + this.src + '") -' + x2 + 'px -' + y2 + 'px no-repeat';
+            document.getElementById('selected').style.height = '16px';
+            document.getElementById('selected').style.width = '16px';
+        }
+
+        function load() {
+            let url = prompt("Image Url", 'images/roguelikeSheet_transparent.png');
+            let px = prompt("Padding X", 1);
+            let py = prompt("Padding Y", 1);
+            let xy = prompt("Tile Size", 16);
+            Crafty.load([url], function () {
+                Crafty.scene("main"); //when everything is loaded, run the main scene
+            });
+            document.getElementById('tilesheet').src = url;
+            document.getElementById('tilesheet').dataset.px = px;
+            document.getElementById('tilesheet').dataset.py = py;
+            document.getElementById('tilesheet').dataset.xy = xy;
+            var obj = {};
+            for (var i = 0; i < 57; i++) {
+                for (var j = 0; j < 31; j++) {
+                    obj[i + '-' + j] = [i, j];
+                }
+            }
+            console.log(obj);
+            Crafty.sprite(xy, xy, url, obj, px, py, 0);
+        }
+    </script>
+</body>
+</html>

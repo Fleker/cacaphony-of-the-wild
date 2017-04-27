@@ -17,6 +17,13 @@ window.onload = function() {
         stoneBody2:     [9, 0],
         redStallM:      [10, 0],
         greenStallM:    [11, 0],
+        redStallL:      [10, 1],
+        greenStallL:    [11, 1],
+        redStallR:      [10, 2],
+        greenStallR:    [11, 2],
+        stallM:         [10, 4],
+        stallL:         [10, 5],
+        stallR:         [10, 6],
         fireplaceNone:  [12, 0],
         fireplace:      [13, 0], // and 14
         anvil:          [15, 0],
@@ -31,6 +38,32 @@ window.onload = function() {
         flowerRed:      [29, 9],
         flowerPurple:   [30, 9],
         flowerWhite:    [31, 9],
+        bushPurple:     [24, 11],
+        bushBlue:       [24, 10],
+        bushRed:        [24, 9],
+        treeRBottom:    [23, 11],
+        treeRTop:       [23, 10],
+        grassBlade1:    [22, 10],
+        grassBlade2:    [22, 11],
+        houseBrownTL:   [38, 21],
+        houseBrownTM:   [39, 21],
+        houseBrownTR:   [40, 21],
+        houseBrownML:   [38, 22],
+        houseBrownMM:   [39, 22],
+        houseBrownMR:   [40, 22],
+        houseBrownBL:   [38, 23],
+        houseBrownBM:   [39, 23],
+        houseBrownBR:   [40, 23],
+        houseBrownRoofTL: [34, 21],
+        houseBrownRoofTR: [35, 21],
+        houseBrownRoofML: [34, 22],
+        houseBrownRoofMR: [35, 22],
+        houseBrownRoofBL: [34, 23],
+        houseBrownRoofBR: [35, 23],
+        houseBrownRoofTM: [25, 21],
+        houseBrownRoofMM: [25, 22],
+        houseBrownRoofBM: [25, 23],
+        pathDirtT:       [5, 7],
 	}, 1, 1, 0);
 
     Crafty.sprite(24, 32, "images/character-hero.png", {
@@ -63,6 +96,7 @@ window.onload = function() {
     let maps = {
         test: [
             [
+                fill("grassBody"),
                 fill("grassBody"),
                 smartFill({type: "waterGrassTM", count: 5}, {type: "waterGrassTR", count: 1}, {type: "grassBody", count: 59}),
                 smartFill({type: "waterBody", count: 5}, {type: "waterGrassMR", count: 1}, {type: "grassBody", count: 59}),
@@ -104,7 +138,7 @@ window.onload = function() {
                 [],
                 [],
                 [],
-                [undefined, undefined, undefined, undefined, "lilyPad"],
+                smartFill({type: undefined, count: 4}, {type: "lilyPad", count: 1}),
                 [],
                 [],
                 [],
@@ -113,7 +147,71 @@ window.onload = function() {
                 [],
                 [],
                 [],
-                [undefined, "flowerWhite", undefined, "flowerBlue", undefined, "flowerWhite"]
+                [undefined, "flowerWhite", undefined, "flowerBlue", undefined, "flowerWhite"],
+                [],
+                [],
+                [undefined, undefined, "flowerRed", undefined, "grassBlade1", undefined, undefined, undefined, "flowerWhite"],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                smartFill({type: undefined, count: 11}, {type: "grassBlade2", count: 1})
+            ], [
+                [],
+                smartFill({type: "treeRBottom", count: 6}),
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                smartFill({type: "bushPurple", count: 1}),
+                smartFill({type: "bushPurple", count: 1}),
+                smartFill({type: "bushPurple", count: 1}),
+                smartFill({type: "bushPurple", count: 1}),
+                smartFill({type: "bushPurple", count: 1}),
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                smartFill({type: undefined, count: 10}, {type: "houseBrownTL", count: 1}, {type: "houseBrownTM", count: 3}, {type: "houseBrownTR", count: 1}),
+                smartFill({type: undefined, count: 10}, {type: "houseBrownML", count: 1}, {type: "houseBrownMM", count: 3}, {type: "houseBrownMR", count: 1}),
+                smartFill({type: undefined, count: 10}, {type: "houseBrownBL", count: 1}, {type: "houseBrownBM", count: 3}, {type: "houseBrownBR", count: 1})
+            ], [
+                smartFill({type: "treeRTop", count: 6}),
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                smartFill({type: undefined, count: 10}, {type: "houseBrownRoofTL", count: 1}, {type: "houseBrownRoofTM", count: 3}, {type: "houseBrownRoofTR", count: 1}),
+                smartFill({type: undefined, count: 10}, {type: "houseBrownRoofML", count: 1}, {type: "houseBrownRoofBM", count: 3}, {type: "houseBrownRoofMR", count: 1}),
+                smartFill({type: undefined, count: 10}, {type: "houseBrownRoofBL", count: 1}, {type: undefined, count: 3}, {type: "houseBrownRoofBR", count: 1}),
             ]
         ]
     };
@@ -128,8 +226,11 @@ window.onload = function() {
                     if (impassableTiles.indexOf(tile) > -1) {
                         classes += ", impassable";
                     }
-                    if (z == 1) {
+                    if (z == 2) {
                         classes += ", solid";
+                    }
+                    if (z > 2) {
+                        classes += ", DOM";
                     }
                     Crafty.e(classes)
                         .attr({x: x * 16, y: y * 16, z: z});
@@ -213,7 +314,7 @@ window.onload = function() {
 
 		//create our player entity with some premade components
 		player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
-			.attr({x: 512, y: 256, z: 1})
+			.attr({x: 512, y: 256, z: 2})
 			.rightControls(1);
 	});
 };
