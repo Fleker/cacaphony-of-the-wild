@@ -183,7 +183,7 @@ window.onload = function() {
 					})
 					// A rudimentary way to prevent the user from passing solid areas
 					.bind('Moved', function(from) {
-						if(this.hit('solid')){
+						if(this.hit('solid') && from.z >= 1){
 							this.attr({x: from.x, y:from.y});
 						}
 					});
@@ -204,7 +204,7 @@ window.onload = function() {
 		});
 
 		//create our player entity with some premade components
-		player = Crafty.e("2D, DOM, solid, flowerPurple, RightControls, Animate, SpriteAnimation, Collision")
+		player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
 			.attr({x: 512, y: 256, z: 1})
 			.rightControls(1);
 	});
