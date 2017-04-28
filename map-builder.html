@@ -48,10 +48,16 @@
                     clicking = false;
                 }
 
-                document.getElementById('cr-stage').onmousemove = function(e) {
-                    if (!clicking) return;
-                    var x = (e.clientX - this.offsetLeft);
-                    var y = (e.clientY - this.offsetTop);
+                function paintMapPlus(e) {
+                    console.log('click');
+                    paintMap(e, true);
+                }
+
+                function paintMap(e, override) {
+                    if (!clicking && !override) return;
+
+                    var x = (e.clientX - document.getElementById('cr-stage').offsetLeft);
+                    var y = (e.clientY - document.getElementById('cr-stage').offsetTop);
                     var tilesheet = document.getElementById('tilesheet');
                     var px = parseInt(tilesheet.dataset.px);
                     var py = parseInt(tilesheet.dataset.py);
@@ -86,7 +92,10 @@
                     Crafty.e(classes)
                         .attr({x: x2, y: y2, z: layer});
                 }
+                document.getElementById('cr-stage').onmousemove = paintMap;
+                document.getElementById('cr-stage').onclick = paintMapPlus;
             });
+
             Crafty.scene("main");
         };
     </script>
@@ -170,8 +179,8 @@
 
         document.getElementById('tilesheet').onclick = function(e) {
             console.log(this, e);
-            var x = (e.clientX - this.offsetLeft);
-            var y = (e.clientY - this.offsetTop);
+            var x = (e.clientX - this.offsetLeft + document.getElementById('tiles').scrollLeft);
+            var y = (e.clientY - this.offsetTop + document.getElementById('tiles').scrollTop);
             var xy = parseInt(this.dataset.xy);
             var px = parseInt(this.dataset.px);
             var py = parseInt(this.dataset.py);
