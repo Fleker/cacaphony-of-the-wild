@@ -6,7 +6,17 @@
 	<title>Build Maps GUI</title>
 	<style>
 	body, html { margin:0; padding: 0; font-family:Arial; font-size:11px }
-	#cr-stage { border:2px solid black; margin:5px auto; color:white }
+	#cr-stage { margin:5px auto; color:white; display: inline-block; }
+        .panel {
+            display: inline-block;
+            width: 200px;
+            overflow-x: auto;
+            height: calc(100vh - 100px);
+        }
+
+        #io {
+            height: calc(100vh - 150px);
+        }
 	</style>
 
     <script>
@@ -74,21 +84,50 @@
     </script>
 </head>
 <body>
-    <button onclick="generate">Generate Map</button>
-    <button onclick="import">Import Map</button>
-    <button onclick="load()">Load Spritesheet</button>
-    <button id='btn_layer' onclick="switchlayer()">Layer 0 (Terrain)</button>
-    <button id='' onclick="selectEraser()">Select Eraser</button>
-    <button onclick="highlightlayer()">Highlight Layer</button>
-
-    <div id='tiles'>
+    <nav>
+        <button onclick="openGenerator()">Generate Map</button>
+        <button onclick="openGenerator()">Import Map</button>
+        <button onclick="load()">Load Spritesheet</button>
+        <button id='btn_layer' onclick="switchlayer()">Layer 0 (Terrain)</button>
+        <button id='' onclick="selectEraser()">Select Eraser</button>
+        <button onclick="highlightlayer()">Highlight Layer</button>
+    </nav>
+    <br>
+    <div id='tiles' class='panel'>
         Selected: <div id='selected' style='height:16px;width:16px'></div><br>
         <img id='tilesheet' />
+    </div>
+    <div id='importexport' class='panel' style='display:none'>
+        <textarea id='io'></textarea><br>
+        <button id='import' onclick="importMap()">Confirm Import</button>
+        <button onclick="document.getElementById('importexport').style.display = 'none'">Close</button>
     </div>
 
     <script>
         layer = 0;
         map = [[[]]];
+
+        function openGenerator() {
+            document.getElementById('importexport').style.display = "inline-block";
+            document.getElementById('io').value = JSON.stringify(map);
+        }
+
+        function importMap() {
+            map = JSON.parse(document.getElementById('io').value);
+            Crafty("2D").each(function(i) {
+                this.destroy();
+            });
+            for (z in map) {
+                for (y in map[z]) {
+                    for (x in map[z][y]) {
+                        let tile = map[z][y][x];
+                        var classes = "2D, Canvas, " + tile;
+                        Crafty.e(classes)
+                            .attr({x: x * 16, y: y * 16, z: z});
+                    }
+                }
+            }
+        }
 
         function highlightlayer() {
             layer = parseInt(prompt("Layer (-1 to cancel)?", 0));
