@@ -40,14 +40,22 @@
             Crafty.scene("loading");
 
             Crafty.scene("main", function() {
-                document.getElementById('cr-stage').onclick = function(e) {
+                var clicking = false;
+                document.body.onmousedown = function() {
+                    clicking = true;
+                }
+                document.body.onmouseup = function() {
+                    clicking = false;
+                }
+
+                document.getElementById('cr-stage').onmousemove = function(e) {
+                    if (!clicking) return;
                     var x = (e.clientX - this.offsetLeft);
                     var y = (e.clientY - this.offsetTop);
                     var tilesheet = document.getElementById('tilesheet');
                     var px = parseInt(tilesheet.dataset.px);
                     var py = parseInt(tilesheet.dataset.py);
                     var xy = parseInt(tilesheet.dataset.xy);
-                    console.log(this, e);
                     var tileX = Math.floor(x / (xy));
                     var tileY = Math.floor(y / (xy));
                     var x2 = tileX * (xy);
