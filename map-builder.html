@@ -17,10 +17,7 @@
 
             //the loading screen that will display while our assets load
             Crafty.scene("loading", function() {
-                //load takes an array of assets and a callback when complete
-                Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png"], function () {
-                    Crafty.scene("main"); //when everything is loaded, run the main scene
-                });
+                //when everything is loaded, run the main scene
 
                 //black background with some loading text
                 Crafty.background("#000");
@@ -45,19 +42,34 @@
                     var tileY = Math.floor(y / (xy));
                     var x2 = tileX * (xy);
                     var y2 = tileY * (xy);
-                    var tile = "0-0";
-                    var classes = "2D, Canvas, " + tile;
+
+                    var selection = document.getElementById('selected');
+                    var tile = selection.dataset.tileX + "-" + selection.dataset.tileY;
+
+                    var classes = "2D, Canvas, x=" + tileX + ", y=" + tileY + ", z=" + layer + ", " + tile;
                     if (!map[layer]) {
                         map[layer] = [[]];
                     }
                     if (!map[layer][tileY]) {
                         map[layer][tileY] = [];
                     }
-                    map[layer][tileY][tileX] = tile;
+                    if (map[layer][tileY][tileX]) {
+                        Crafty("x=" + tileX).each(function(i) {
+                            if(this._x == x2 && this._y == y2 && this._z == layer) {
+                                this.destroy();
+                            }
+                        });
+                    }
+                    if (tileX == "-1") {
+                        map[layer][tileY][tileX] = undefined;
+                    } else {
+                        map[layer][tileY][tileX] = tile;
+                    }
                     Crafty.e(classes)
                         .attr({x: x2, y: y2, z: layer});
                 }
             });
+            Crafty.scene("main");
         };
     </script>
 </head>
@@ -66,6 +78,7 @@
     <button onclick="import">Import Map</button>
     <button onclick="load()">Load Spritesheet</button>
     <button id='btn_layer' onclick="switchlayer()">Layer 0</button>
+    <button id='btn_layer' onclick="selectEraser()">Select Eraser</button>
 
     <div id='tiles'>
         Selected: <div id='selected' style='height:16px;width:16px'></div><br>
@@ -96,6 +109,8 @@
             document.getElementById('selected').style.background = 'url("' + this.src + '") -' + x2 + 'px -' + y2 + 'px no-repeat';
             document.getElementById('selected').style.height = '16px';
             document.getElementById('selected').style.width = '16px';
+            document.getElementById('selected').dataset.tileX = tileX;
+            document.getElementById('selected').dataset.tileY = tileY;
         }
 
         function load() {
@@ -119,6 +134,12 @@
                 console.log(xy, xy, url, obj, px, py, 0);
                 eval("Crafty.sprite(" + xy + ", " + xy + ", '" + url + "', obj, " + px + ", " + py + ", 0)");
             });
+        }
+
+        function selectEraser() {
+            document.getElementById('selected').dataset.tileX = -1;
+            document.getElementById('selected').dataset.tileY = -1;
+            document.getElementById('selected').style.background = 'rgba(0,0,0,0)'
         }
     </script>
 </body>
