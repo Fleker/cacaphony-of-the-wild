@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>	<script type="text/javascript" src="http://craftyjs.com/release/0.5.4/crafty.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>
-	<title>Tutorial</title>
+	<title>Build Maps GUI</title>
 	<style>
 	body, html { margin:0; padding: 0; font-family:Arial; font-size:11px }
 	#cr-stage { border:2px solid black; margin:5px auto; color:white }
@@ -34,19 +34,19 @@
 
             Crafty.scene("main", function() {
                 document.getElementById('cr-stage').onclick = function(e) {
+                    var x = (e.clientX - this.offsetLeft);
+                    var y = (e.clientY - this.offsetTop);
                     var tilesheet = document.getElementById('tilesheet');
                     var px = parseInt(tilesheet.dataset.px);
                     var py = parseInt(tilesheet.dataset.py);
                     var xy = parseInt(tilesheet.dataset.xy);
                     console.log(this, e);
-                    var tileX = Math.floor(x / (xy + px));
-                    var tileY = Math.floor(y / (xy + py));
-                    var x2 = tileX * (xy + px);
-                    var y2 = tileY * (xy + py);
+                    var tileX = Math.floor(x / (xy));
+                    var tileY = Math.floor(y / (xy));
+                    var x2 = tileX * (xy);
+                    var y2 = tileY * (xy);
                     var tile = "0-0";
                     var classes = "2D, Canvas, " + tile;
-                    var x = (e.clientX - this.offsetLeft) * (px + xy);
-                    var y = (e.clientY - this.offsetTop) * (py + xy);
                     if (!map[layer]) {
                         map[layer] = [[]];
                     }
@@ -105,19 +105,20 @@
             let xy = prompt("Tile Size", 16);
             Crafty.load([url], function () {
                 Crafty.scene("main"); //when everything is loaded, run the main scene
-            });
-            document.getElementById('tilesheet').src = url;
-            document.getElementById('tilesheet').dataset.px = px;
-            document.getElementById('tilesheet').dataset.py = py;
-            document.getElementById('tilesheet').dataset.xy = xy;
-            var obj = {};
-            for (var i = 0; i < 57; i++) {
-                for (var j = 0; j < 31; j++) {
-                    obj[i + '-' + j] = [i, j];
+
+                document.getElementById('tilesheet').src = url;
+                document.getElementById('tilesheet').dataset.px = px;
+                document.getElementById('tilesheet').dataset.py = py;
+                document.getElementById('tilesheet').dataset.xy = xy;
+                var obj = {};
+                for (var i = 0; i < 57; i++) {
+                    for (var j = 0; j < 31; j++) {
+                        obj[i + '-' + j] = [i, j];
+                    }
                 }
-            }
-            console.log(obj);
-            Crafty.sprite(xy, xy, url, obj, px, py, 0);
+                console.log(xy, xy, url, obj, px, py, 0);
+                eval("Crafty.sprite(" + xy + ", " + xy + ", '" + url + "', obj, " + px + ", " + py + ", 0)");
+            });
         }
     </script>
 </body>
