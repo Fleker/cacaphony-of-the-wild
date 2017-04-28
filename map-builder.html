@@ -77,8 +77,9 @@
     <button onclick="generate">Generate Map</button>
     <button onclick="import">Import Map</button>
     <button onclick="load()">Load Spritesheet</button>
-    <button id='btn_layer' onclick="switchlayer()">Layer 0</button>
-    <button id='btn_layer' onclick="selectEraser()">Select Eraser</button>
+    <button id='btn_layer' onclick="switchlayer()">Layer 0 (Terrain)</button>
+    <button id='' onclick="selectEraser()">Select Eraser</button>
+    <button onclick="highlightlayer()">Highlight Layer</button>
 
     <div id='tiles'>
         Selected: <div id='selected' style='height:16px;width:16px'></div><br>
@@ -89,9 +90,35 @@
         layer = 0;
         map = [[[]]];
 
+        function highlightlayer() {
+            layer = parseInt(prompt("Layer (-1 to cancel)?", 0));
+            if (layer < 0) {
+                Crafty("2D").each(function(i) {
+                    this.alpha = 1;
+                });
+            } else {
+                Crafty("2D").each(function(i) {
+                     if (this._z != layer) {
+                        this.alpha = 0.3;
+                     } else {
+                        this.alpha = 1;
+                     }
+                });
+            }
+        }
+
         function switchlayer() {
             layer = parseInt(prompt("Layer?", 0));
             document.getElementById('btn_layer').innerHTML = "Layer " + layer;
+            if (layer == 0) {
+                document.getElementById('btn_layer').innerHTML += " (Terrain)";
+            } else if (layer == 1) {
+                document.getElementById('btn_layer').innerHTML += " (Ground)";
+            } else if (layer == 2) {
+                document.getElementById('btn_layer').innerHTML += " (Face-to-Face)";
+            } else if (layer > 3) {
+                document.getElementById('btn_layer').innerHTML += " (Above you)";
+            }
         }
 
         document.getElementById('tilesheet').onclick = function(e) {
