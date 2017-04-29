@@ -1,3 +1,8 @@
+const DIRECTION_LEFT = 0;
+const DIRECTION_UP = 1;
+const DIRECTION_RIGHT = 2;
+const DIRECTION_DOWN = 3;
+
 window.onload = function() {
 	//start crafty
 	Crafty.init(1024, 592);
@@ -15,6 +20,10 @@ window.onload = function() {
     Crafty.sprite(24, 32, "images/character-hero.png", {
         char_hero: [0, 0]
     });
+
+    Crafty.sprite(24, 32, "images/character-fox-furry.png", {
+        char_fox: [0, 0]
+    }, 0, 0, 0);
 
     // Dumb fill of entire row
     function fill(type) {
@@ -71,7 +80,7 @@ window.onload = function() {
 	//the loading screen that will display while our assets load
 	Crafty.scene("loading", function() {
 		//load takes an array of assets and a callback when complete
-		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png"], function () {
+		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png", "images/character-fox-furry.png"], function () {
 			Crafty.scene("plains"); //when everything is loaded, run the main scene
 		});
 
@@ -142,10 +151,79 @@ window.onload = function() {
 
 		});
 
-            //create our player entity with some premade components
-            player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
-                .attr({x: 512, y: 256, z: 2})
-                .rightControls(1);
+        //create our player entity with some premade components
+        player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
+            .attr({x: 512, y: 256, z: 2})
+            .rightControls(1);
+    }
+
+    function releaseMonster() {
+        Crafty.c('Enemy', {
+            directionUpdated: new Date().getTime() - 3000,
+            direction: DIRECTION_LEFT,
+            justCreated: true,
+            init: function() {
+					//setup animations
+					this.requires("SpriteAnimation, Collision, char_fox")
+					.animate("walk_left2", 0, 3, 2)
+					.animate("walk_right2", 0, 1, 2)
+					.animate("walk_up2", 0, 0, 2)
+					.animate("walk_down2", 0, 2, 2)
+					//change direction when a direction change event is received
+					.bind("NewDirection",
+						function () {
+							if (this.direction == DIRECTION_LEFT) {
+								if (!this.isPlaying("walk_left2"))
+									this.stop().animate("walk_left2", 10, -1);
+							} else if (this.direction == DIRECTION_RIGHT) {
+								if (!this.isPlaying("walk_right2"))
+									this.stop().animate("walk_right2", 10, -1);
+							} else if (this.direction == DIRECTION_UP) {
+								if (!this.isPlaying("walk_up2"))
+									this.stop().animate("walk_up2", 10, -1);
+							} else if (this.direction == DIRECTION_DOWN) {
+								if (!this.isPlaying("walk_down2"))
+									this.stop().animate("walk_down2", 10, -1);
+							} else {
+								this.stop();
+							}
+					})
+                    .bind('EnterFrame', function() {
+                        if (new Date().getTime() - this.directionUpdated > 3000 || this.x <= 0 || this.x >= Crafty.viewport.width || this.y <= 0 || this.y >= Crafty.viewport.height) {
+                            this.directionUpdated = new Date().getTime();
+                            this.direction = Crafty.math.randomInt(0, 3);
+                            this.trigger('NewDirection');
+                        }
+
+                        if (this.hit('solid')) {
+                            this.direction = 4;
+                            this.direction = Crafty.math.randomInt(0, 3);
+                            this.trigger('NewDirection');
+                            if (this.justCreated) {
+                                this.destroy(); // Spawn fail.
+                            }
+                        } else if (this.hit('Hero')) {
+                            // ATTACK!
+                        }
+
+                        this.justCreated = false;
+
+                        if (this.direction == DIRECTION_LEFT) {
+                            this.x--;
+                        } else if (this.direction == DIRECTION_RIGHT) {
+                            this.x++;
+                        } else if (this.direction == DIRECTION_UP) {
+                            this.y--;
+                        } else if (this.direction == DIRECTION_DOWN) {
+                            this.y++;
+                        }
+
+                    });
+				return this;
+			}
+        });
+        player = Crafty.e("2D, DOM, solid, char_fox, Animate, Enemy, SpriteAnimation, Collision")
+                .attr({x: Crafty.math.randomInt(0, 55) * 16, y: Crafty.math.randomInt(0, 35) * 16, z: 2})
     }
 
     Crafty.scene("main", function() {
@@ -158,6 +236,11 @@ window.onload = function() {
         generateWorld('plains');
 
         createHero();
+
+        setInterval(function() {
+            // Create new enemy and release it into the wild.
+            releaseMonster();
+        }, 1000);
     });
 };
 
