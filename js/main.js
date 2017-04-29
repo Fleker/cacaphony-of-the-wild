@@ -40,7 +40,8 @@ window.onload = function() {
     // Maps
     let impassableTiles = ["waterBody", "waterGrassTM"];
     let maps = {
-        test: town
+        test: town,
+        plains: plains
     };
 
 	//method to randomy generate the map
@@ -71,7 +72,7 @@ window.onload = function() {
 	Crafty.scene("loading", function() {
 		//load takes an array of assets and a callback when complete
 		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png"], function () {
-			Crafty.scene("main"); //when everything is loaded, run the main scene
+			Crafty.scene("plains"); //when everything is loaded, run the main scene
 		});
 
 		//black background with some loading text
@@ -84,10 +85,8 @@ window.onload = function() {
 	//automatically play the loading scene
 	Crafty.scene("loading");
 
-	Crafty.scene("main", function() {
-		generateWorld('test');
-
-		Crafty.c('Hero', {
+    function createHero() {
+        Crafty.c('Hero', {
 			init: function() {
 					//setup animations
 					this.requires("SpriteAnimation, Collision, char_hero")
@@ -122,14 +121,16 @@ window.onload = function() {
 					.bind('Moved', function(from) {
 						if(this.hit('solid')) {
                             console.log(this.hit('solid'));
-							this.attr({x: from.x, y:from.y});
-						}
+							this.attr({x: from.x, y: from.y});
+						} else if (this.hit('enemy')) {
+                            console.log("Enemy");
+                            this.attr({x: from.x, y: from.y});
+                        }
 					});
 				return this;
 			}
-		});
-
-		Crafty.c("RightControls", {
+        });
+        Crafty.c("RightControls", {
 			init: function() {
 				this.requires('Multiway');
 			},
@@ -141,11 +142,23 @@ window.onload = function() {
 
 		});
 
-		//create our player entity with some premade components
-		player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
-			.attr({x: 512, y: 256, z: 2})
-			.rightControls(1);
-	});
+            //create our player entity with some premade components
+            player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
+                .attr({x: 512, y: 256, z: 2})
+                .rightControls(1);
+    }
+
+    Crafty.scene("main", function() {
+        generateWorld('test');
+
+        createHero();
+    });
+
+    Crafty.scene("plains", function() {
+        generateWorld('plains');
+
+        createHero();
+    });
 };
 
 /* MAPS */
