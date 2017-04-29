@@ -7,6 +7,7 @@ window.onload = function() {
 	//start crafty
 	Crafty.init(1024, 592);
 	Crafty.canvas.init();
+    var currentScene = '';
 
 	//turn the sprite map into usable components
     var obj = {};
@@ -77,6 +78,16 @@ window.onload = function() {
         }
 	}
 
+    //the death screen
+	Crafty.scene("ded", function() {
+		//black background with some loading text
+        currentScene = 'ded';
+		Crafty.background("#000");
+		Crafty.e("2D, DOM, Text").attr({w: 100, h: 298, x: 450, y: 120})
+			.text("u r ded m8")
+			.css({"text-align": "center"});
+	});
+
 	//the loading screen that will display while our assets load
 	Crafty.scene("loading", function() {
 		//load takes an array of assets and a callback when complete
@@ -94,8 +105,21 @@ window.onload = function() {
 	//automatically play the loading scene
 	Crafty.scene("loading");
 
+    function loadDistance() {
+        let distance = Infinity;
+        let x = Crafty('Hero')._x;
+        let y = Crafty('Hero')._y;
+        Crafty('Enemy').each(function(i) {
+            // Compute distance
+            let d = Math.sqrt(Math.pow(this._x - x, 2) + Math.pow(this._y - y, 2));
+            distance = Math.min(distance, d);
+        });
+        return distance;
+    }
+
     function createHero() {
         Crafty.c('Hero', {
+            hitPoints: 100,
 			init: function() {
 					//setup animations
 					this.requires("SpriteAnimation, Collision, char_hero")
@@ -131,11 +155,38 @@ window.onload = function() {
 						if(this.hit('solid')) {
                             console.log(this.hit('solid'));
 							this.attr({x: from.x, y: from.y});
-						} else if (this.hit('enemy')) {
+						} else if (this.hit('Enemy')) {
                             console.log("Enemy");
                             this.attr({x: from.x, y: from.y});
                         }
-					});
+
+                        // Move to next scene maybe
+                        if (this.y > Crafty.viewport.height && currentScene == 'plains') {
+                            Crafty.scene('main');
+                        } else if (this.y < 0 && currentScene == 'main') {
+                            Crafty.scene('plains');
+                        }
+					})
+                    .bind('Attack', function() {
+                        if (--this.hitPoints <= 0) {
+                            Crafty.scene('ded');
+                        }
+                    })
+                    .bind('KeyDown', function(e) {
+                        if (this.hit('Enemy') && e.key == Crafty.keys.SPACE) {
+                            // Attack
+                            console.log('Attack', this.hit('Enemy'));
+                            this.hit('Enemy')[0].obj.trigger('Attack');
+                        }
+                    })
+                    .bind('EnterFrame', function(e) {
+                        if (loadDistance() < 64) {
+                            // Combat!
+                            console.warn('Enemy Approaching');
+                        } else {
+                            // Adventure
+                        }
+                    });
 				return this;
 			}
         });
@@ -162,6 +213,7 @@ window.onload = function() {
             directionUpdated: new Date().getTime() - 3000,
             direction: DIRECTION_LEFT,
             justCreated: true,
+            hitPoints: 1,
             init: function() {
 					//setup animations
 					this.requires("SpriteAnimation, Collision, char_fox")
@@ -189,6 +241,17 @@ window.onload = function() {
 							}
 					})
                     .bind('EnterFrame', function() {
+                        if (this.hit('Hero')) {
+                            // Move into direction
+                            this.direction = (Crafty('Hero').direction + 2) % 4;
+                            // ATTACK!
+                            if (new Date().getTime() - this.directionUpdated > 1000) {
+                                this.directionUpdated = new Date().getTime();
+                                Crafty('Hero').trigger('Attack');
+                            }
+                            return;
+                        }
+
                         if (new Date().getTime() - this.directionUpdated > 3000 || this.x <= 0 || this.x >= Crafty.viewport.width || this.y <= 0 || this.y >= Crafty.viewport.height) {
                             this.directionUpdated = new Date().getTime();
                             this.direction = Crafty.math.randomInt(0, 3);
@@ -202,8 +265,6 @@ window.onload = function() {
                             if (this.justCreated) {
                                 this.destroy(); // Spawn fail.
                             }
-                        } else if (this.hit('Hero')) {
-                            // ATTACK!
                         }
 
                         this.justCreated = false;
@@ -218,6 +279,11 @@ window.onload = function() {
                             this.y++;
                         }
 
+                    })
+                    .bind('Attack', function() {
+                        if (--this.hitPoints < 1) {
+                            this.destroy();
+                        }
                     });
 				return this;
 			}
@@ -228,19 +294,25 @@ window.onload = function() {
 
     Crafty.scene("main", function() {
         generateWorld('test');
+        currentScene = 'main';
 
         createHero();
     });
 
     Crafty.scene("plains", function() {
         generateWorld('plains');
+        currentScene = 'plains';
 
         createHero();
-
-        setInterval(function() {
-            // Create new enemy and release it into the wild.
-            releaseMonster();
-        }, 1000);
+        releaseMonster();
+        var interval = setInterval(function() {
+            if (currentScene == 'plains') {
+                // Create new enemy and release it into the wild.
+                releaseMonster();
+            } else {
+                clearInterval(interval);
+            }
+        }, 15000);
     });
 };
 
