@@ -62,7 +62,7 @@ function DynamicAudioManager() {
         var src = this.variations[oldkey];
         // Grab time, in minutes.
         // Make sure we add in the previous offset in order to line-up our measures properly. Otherwise we assume the last track started at 0s.
-        var time = (this.context.currentTime - this.currentStart + this.currentOffset) / 60;
+        var time = (this.context.currentTime - this.currentStart - this.currentOffset) / 60;
         // Measures per minute may change depending on time signature. We assume 4/4.
         var measuresPerMinute = src.bpm / 4;
         var measuresPlayed = time * measuresPerMinute;
@@ -73,7 +73,7 @@ function DynamicAudioManager() {
         var newsrc = this.variations[newkey];
         var newMeasuresPerMinute = newsrc.bpm / 4; // Assume 4/4.
         var minutes = measuresModulus / newMeasuresPerMinute;
-        console.log(time, measuresPerMinute, measuresPlayed, measuresModulus, newMeasuresPerMinute, minutes);
+        console.log({time: time, measuresPerMinute: measuresPerMinute, measuresPlayed: measuresPlayed, measuresModulus: measuresModulus, newMeasuresPerMinute: newMeasuresPerMinute, minutes: minutes, offsetTime: this.currentOffset});
         return minutes * 60; // Convert back to s.
     }
 
