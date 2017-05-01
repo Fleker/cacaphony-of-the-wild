@@ -10,6 +10,7 @@ function DynamicAudioManager() {
     this.variations = {};
     this.buffer = undefined;
     this.currentPlay = undefined;
+    this.currentOffset = 0;
 
     this.add = function(dynAudio) {
         this.variations[dynAudio.key] = dynAudio;
@@ -24,6 +25,7 @@ function DynamicAudioManager() {
             let start = 0;
             if (this.currentKey) {
                 start = this.getStartTime(this.currentKey, key);
+                this.currentOffset = start;
             }
 
             // Swap
@@ -58,8 +60,9 @@ function DynamicAudioManager() {
     this.getStartTime = function(oldkey, newkey) {
         // Grab obj
         var src = this.variations[oldkey];
-        // Grab time, in minutes
-        var time = (this.context.currentTime - this.currentStart) / 60;
+        // Grab time, in minutes.
+        // Make sure we add in the previous offset in order to line-up our measures properly. Otherwise we assume the last track started at 0s.
+        var time = (this.context.currentTime - this.currentStart + this.currentOffset) / 60;
         // Measures per minute may change depending on time signature. We assume 4/4.
         var measuresPerMinute = src.bpm / 4;
         var measuresPlayed = time * measuresPerMinute;
@@ -68,10 +71,10 @@ function DynamicAudioManager() {
         var measuresModulus = measuresPlayed % scoreMeasures;
         // Now compute the start time based on next track.
         var newsrc = this.variations[newkey];
-        var measuresPerMinute = newsrc.bpm / 4; // Assume 4/4.
+        var newMeasuresPerMinute = newsrc.bpm / 4; // Assume 4/4.
         var minutes = measuresModulus / measuresPerMinute;
-        console.log(time, measuresPerMinute, measuresPlayed, measuresModulus, minutes);
-        return minutes * 60; // Convert back to ms.
+        console.log(time, measuresPerMinute, measuresPlayed, measuresModulus, newMeasuresPerMinute, minutes);
+        return minutes * 60; // Convert back to s.
     }
 
     this.reset = function() {
@@ -85,7 +88,13 @@ function DynamicAudioManager() {
             urls.push(this.variations[i].filename);
         }
         this.buffer = new Buffer(this.context, urls);
-        this.buffer.loadAll();
+        let thisManager = this;
+        this.buffer.loadAll(function() {
+            if (thisManager.currentKey) {
+                thisManager.reset();
+                thisManager.play(thisManager.currentKey);
+            }
+        });
     }
 }
 
@@ -117,10 +126,11 @@ function Buffer(context, urls) {
         request.send();
     };
 
-    this.loadAll = function() {
+    this.loadAll = function(callback) {
         this.urls.forEach((url, index) => {
             this.loadSound(url, index);
         })
+        callback();
     }
 
     this.loaded = function() {
@@ -251,7 +261,6 @@ window.onload = function() {
             audioManager.add(new DynamicAudio("town", "audio/town.ogg", 120));
             audioManager.add(new DynamicAudio("adventure", "audio/adventure.ogg", 100));
             audioManager.add(new DynamicAudio("combat", "audio/combat.ogg", 150));
-            audioManager.load();
 
             Crafty.scene("main"); //when everything is loaded, run the main scene
 		});
