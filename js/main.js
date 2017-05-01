@@ -205,7 +205,7 @@ window.onload = function() {
 		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png", "images/character-fox-furry.png", "audio/town.ogg", "audio/adventure.ogg", "audio/combat.ogg"], function () {
             // Start music
             audioManager.add(new DynamicAudio("town", "audio/town.ogg", 120));
-            audioManager.add(new DynamicAudio("adventure", "audio/adventure.ogg", 100));
+            audioManager.add(new DynamicAudio("adventure", "audio/adventure.ogg", 120));
             audioManager.add(new DynamicAudio("combat", "audio/combat.ogg", 150));
             audioManager.load();
 
