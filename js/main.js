@@ -110,7 +110,7 @@ function Buffer(context, urls) {
     this.urls = urls;
     this.buffer = [];
 
-    this.loadSound = function(url, index) {
+    this.loadSound = function(url, index, callback) {
         let request = new XMLHttpRequest();
         request.open('get', url, true);
         request.responseType = 'arraybuffer';
@@ -120,6 +120,8 @@ function Buffer(context, urls) {
                 console.log(typeof buffer, typeof thisBuffer, buffer);
                 thisBuffer.buffer[index] = buffer;
                 if(index == thisBuffer.urls.length-1) {
+                    console.log("All sounds loaded");
+                    callback();
                     thisBuffer.loaded();
                 }
             });
@@ -129,13 +131,13 @@ function Buffer(context, urls) {
 
     this.loadAll = function(callback) {
         this.urls.forEach((url, index) => {
-            this.loadSound(url, index);
+            this.loadSound(url, index, callback);
         })
-        callback();
     }
 
     this.loaded = function() {
         // what happens when all the files are loaded
+        console.log("Done loading all sounds");
     }
 
     this.getSoundByIndex = function(index) {
