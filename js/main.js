@@ -172,7 +172,7 @@ window.onload = function() {
 	Crafty.init(1024, 592);
 	Crafty.canvas.init();
     var currentScene = '';
-    var audioManager = new DynamicAudioManager();
+    window.audioManager = new DynamicAudioManager();
 
 	//turn the sprite map into usable components
     var obj = {};
