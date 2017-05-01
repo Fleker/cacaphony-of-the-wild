@@ -67,12 +67,12 @@ function DynamicAudioManager() {
         var measuresPerMinute = src.bpm / 4;
         var measuresPlayed = time * measuresPerMinute;
         // Take the modulus based on how many measures have been played.
-        var scoreMeasures = 44; // Assume this.
+        var scoreMeasures = 45; // Assume this. It's 44 measures (+1 because of end).
         var measuresModulus = measuresPlayed % scoreMeasures;
         // Now compute the start time based on next track.
         var newsrc = this.variations[newkey];
         var newMeasuresPerMinute = newsrc.bpm / 4; // Assume 4/4.
-        var minutes = measuresModulus / measuresPerMinute;
+        var minutes = measuresModulus / newMeasuresPerMinute;
         console.log(time, measuresPerMinute, measuresPlayed, measuresModulus, newMeasuresPerMinute, minutes);
         return minutes * 60; // Convert back to s.
     }
@@ -91,6 +91,7 @@ function DynamicAudioManager() {
         let thisManager = this;
         this.buffer.loadAll(function() {
             if (thisManager.currentKey) {
+                console.log("Resetting and playing " + thisManager.currentKey);
                 thisManager.reset();
                 thisManager.play(thisManager.currentKey);
             }
