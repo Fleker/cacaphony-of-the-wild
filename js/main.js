@@ -20,6 +20,12 @@ function DynamicAudioManager() {
             if (this.currentPlay) {
                 this.currentPlay.stop();
             }
+            // Get the time we should start.
+            let start = 0;
+            if (this.currentKey) {
+                start = this.getStartTime(this.currentKey, key);
+            }
+
             // Swap
             this.currentKey = key;
             this.currentStart = this.context.currentTime;
@@ -30,8 +36,9 @@ function DynamicAudioManager() {
             }
 
             console.log("Play audio " + index);
+
             this.currentPlay = new Sound(this.context, this.buffer.getSoundByIndex(index));
-            this.currentPlay.play();
+            this.currentPlay.play(start);
         }
     }
 
@@ -45,6 +52,26 @@ function DynamicAudioManager() {
             index++
         }
         return -1;
+    }
+
+    // Gets the appropriate time in the next track to start playing.
+    this.getStartTime = function(oldkey, newkey) {
+        // Grab obj
+        var src = this.variations[oldkey];
+        // Grab time, in minutes
+        var time = (this.context.currentTime - this.currentStart) / 60;
+        // Measures per minute may change depending on time signature. We assume 4/4.
+        var measuresPerMinute = src.bpm / 4;
+        var measuresPlayed = time * measuresPerMinute;
+        // Take the modulus based on how many measures have been played.
+        var scoreMeasures = 44; // Assume this.
+        var measuresModulus = measuresPlayed % scoreMeasures;
+        // Now compute the start time based on next track.
+        var newsrc = this.variations[newkey];
+        var measuresPerMinute = newsrc.bpm / 4; // Assume 4/4.
+        var minutes = measuresModulus / measuresPerMinute;
+        console.log(time, measuresPerMinute, measuresPlayed, measuresModulus, minutes);
+        return minutes * 60; // Convert back to ms.
     }
 
     this.reset = function() {
@@ -114,13 +141,14 @@ function Sound(context, buffer) {
         console.log(typeof this.buffer, this.buffer)
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
+        this.source.loop = true;
         this.source.connect(this.gainNode);
         this.gainNode.connect(this.context.destination);
     };
 
-    this.play = function() {
+    this.play = function(starttime) {
         this.init();
-        this.source.start(this.context.currentTime);
+        this.source.start(this.context.currentTime, starttime);
     };
 
     this.stop = function() {
