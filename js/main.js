@@ -122,7 +122,6 @@ function Buffer(context, urls) {
             thisBuffer.context.decodeAudioData(request.response, function(buffer) {
                 console.log(typeof buffer, typeof thisBuffer, buffer);
                 thisBuffer.buffer[index] = buffer;
-                updateProgress(thisBuffer.urls.length);
                 if (++this.bufferLoaded == thisBuffer.urls.length) {
                     console.log("All sounds loaded");
                     callback();
