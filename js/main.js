@@ -466,9 +466,13 @@ window.onload = function() {
     Crafty.scene("main", function() {
         generateWorld('test');
         currentScene = 'main';
-        audioManager.play("town");
-
         createHero();
+
+        try {
+            audioManager.play("town");
+        } catch(e) {
+            console.warn(e);
+        }
     });
 
     Crafty.scene("plains", function() {
