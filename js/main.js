@@ -10,6 +10,7 @@ function DynamicAudioManager() {
     this.variations = {};
     this.buffer = undefined;
     this.currentPlay = undefined;
+    this.currentOffset = 0;
 
     this.add = function(dynAudio) {
         this.variations[dynAudio.key] = dynAudio;
@@ -20,20 +21,66 @@ function DynamicAudioManager() {
             if (this.currentPlay) {
                 this.currentPlay.stop();
             }
+            // Get the time we should start.
+            let start = 0;
+            if (this.currentKey) {
+                start = this.getStartTime(this.currentKey, key);
+                this.currentOffset = start;
+            }
+
             // Swap
             this.currentKey = key;
             this.currentStart = this.context.currentTime;
-            let index = 0;
-            for (i in this.variations) {
-                if (i.key == key) {
-                    break;
-                }
-                index++
+            let index = this.findIndexByKey(key);
+            if (index == -1) {
+                console.warn("Sound doesn't exist.");
+                return;
             }
 
+            console.log("Play audio " + index);
+
             this.currentPlay = new Sound(this.context, this.buffer.getSoundByIndex(index));
-            this.currentPlay.play();
+            this.currentPlay.play(start);
         }
+    }
+
+    this.findIndexByKey = function(key) {
+        let index = 0;
+        for (i in this.variations) {
+            console.log(i, key);
+            if (i == key) {
+                return index;
+            }
+            index++
+        }
+        return -1;
+    }
+
+    // Gets the appropriate time in the next track to start playing.
+    this.getStartTime = function(oldkey, newkey) {
+        // Grab obj
+        var src = this.variations[oldkey];
+        // Grab time, in minutes.
+        // Make sure we add in the previous offset in order to line-up our measures properly. Otherwise we assume the last track started at 0s.
+        // So we add our previous offset to inflate the effective time of our music track.
+        var time = (this.context.currentTime - this.currentStart + this.currentOffset) / 60;
+        // Measures per minute may change depending on time signature. We assume 4/4.
+        var measuresPerMinute = src.bpm / 4;
+        var measuresPlayed = time * measuresPerMinute;
+        // Take the modulus based on how many measures have been played.
+        var scoreMeasures = 44; // Assume this. It's 44 measures.
+        var measuresModulus = measuresPlayed % scoreMeasures;
+        // Now compute the start time based on next track.
+        var newsrc = this.variations[newkey];
+        var newMeasuresPerMinute = newsrc.bpm / 4; // Assume 4/4.
+        var minutes = measuresModulus / newMeasuresPerMinute;
+        console.log({time: time, measuresPerMinute: measuresPerMinute, measuresPlayed: measuresPlayed, measuresModulus: measuresModulus, newMeasuresPerMinute: newMeasuresPerMinute, minutes: minutes, offsetTime: this.currentOffset});
+        return minutes * 60; // Convert back to s.
+    }
+
+    this.reset = function() {
+        this.currentKey = '';
+        this.currentPlay = undefined;
     }
 
     this.load = function() {
@@ -42,7 +89,15 @@ function DynamicAudioManager() {
             urls.push(this.variations[i].filename);
         }
         this.buffer = new Buffer(this.context, urls);
-        this.buffer.loadAll();
+        let thisManager = this;
+        this.buffer.loadAll(function() {
+            if (thisManager.currentKey) {
+                var key = thisManager.currentKey;
+                console.log("Resetting and playing " + thisManager.currentKey);
+                thisManager.reset();
+                thisManager.play(key);
+            }
+        });
     }
 }
 
@@ -56,19 +111,21 @@ function Buffer(context, urls) {
     this.context = context;
     this.urls = urls;
     this.buffer = [];
-    this.soundsLoaded = 0;
+    this.bufferLoaded = 0;
 
-    this.loadSound = function(url, index) {
+    this.loadSound = function(url, index, callback) {
         let request = new XMLHttpRequest();
         request.open('get', url, true);
         request.responseType = 'arraybuffer';
         let thisBuffer = this;
         request.onload = function() {
             thisBuffer.context.decodeAudioData(request.response, function(buffer) {
-                console.log(typeof buffer, typeof thisBuffer);
+                console.log(typeof buffer, typeof thisBuffer, buffer);
                 thisBuffer.buffer[index] = buffer;
                 updateProgress(thisBuffer.urls.length);
-                if (++this.soundsLoaded == thisBuffer.urls.length) {
+                if (++this.bufferLoaded == thisBuffer.urls.length) {
+                    console.log("All sounds loaded");
+                    callback();
                     thisBuffer.loaded();
                 }
             });
@@ -76,14 +133,15 @@ function Buffer(context, urls) {
         request.send();
     };
 
-    this.loadAll = function() {
+    this.loadAll = function(callback) {
         this.urls.forEach((url, index) => {
-            this.loadSound(url, index);
+            this.loadSound(url, index, callback);
         })
     }
 
     this.loaded = function() {
         // what happens when all the files are loaded
+        console.log("Done loading all sounds");
     }
 
     this.getSoundByIndex = function(index) {
@@ -97,15 +155,22 @@ function Sound(context, buffer) {
 
     this.init = function() {
         this.gainNode = this.context.createGain();
+        console.log(typeof this.buffer, this.buffer)
+        if (!this.buffer) {
+            return false;
+        }
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
+        this.source.loop = true;
         this.source.connect(this.gainNode);
         this.gainNode.connect(this.context.destination);
+        return true;
     };
 
-    this.play = function() {
-        this.init();
-        this.source.start(this.context.currentTime);
+    this.play = function(starttime) {
+        if (this.init()) {
+            this.source.start(this.context.currentTime, starttime);
+        }
     };
 
     this.stop = function() {
@@ -119,7 +184,7 @@ window.onload = function() {
 	Crafty.init(1024, 592);
 	Crafty.canvas.init();
     var currentScene = '';
-    var audioManager = new DynamicAudioManager();
+    window.audioManager = new DynamicAudioManager();
 
 	//turn the sprite map into usable components
     var obj = {};
@@ -297,6 +362,9 @@ window.onload = function() {
                         }
                     })
                     .bind('EnterFrame', function(e) {
+                        if (currentScene != "plains") {
+                            return;
+                        }
                         if (loadDistance() < 64) {
                             // Combat!
                             audioManager.play("combat");
@@ -414,9 +482,13 @@ window.onload = function() {
     Crafty.scene("main", function() {
         generateWorld('test');
         currentScene = 'main';
-        audioManager.play("town");
-
         createHero();
+
+        try {
+            audioManager.play("town");
+        } catch(e) {
+            console.warn(e);
+        }
     });
 
     Crafty.scene("plains", function() {
