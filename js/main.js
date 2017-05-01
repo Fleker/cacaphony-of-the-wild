@@ -56,6 +56,7 @@ function Buffer(context, urls) {
     this.context = context;
     this.urls = urls;
     this.buffer = [];
+    this.soundsLoaded = 0;
 
     this.loadSound = function(url, index) {
         let request = new XMLHttpRequest();
@@ -67,7 +68,7 @@ function Buffer(context, urls) {
                 console.log(typeof buffer, typeof thisBuffer);
                 thisBuffer.buffer[index] = buffer;
                 updateProgress(thisBuffer.urls.length);
-                if(index == thisBuffer.urls.length-1) {
+                if (++this.soundsLoaded == thisBuffer.urls.length) {
                     thisBuffer.loaded();
                 }
             });
