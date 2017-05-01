@@ -9,6 +9,7 @@ function DynamicAudioManager() {
     this.currentStart = 0;
     this.variations = {};
     this.buffer = undefined;
+    this.currentPlay = undefined;
 
     this.add = function(dynAudio) {
         this.variations[dynAudio.key] = dynAudio;
@@ -16,6 +17,9 @@ function DynamicAudioManager() {
 
     this.play = function(key) {
         if (key != this.currentKey) {
+            if (this.currentPlay) {
+                this.currentPlay.stop();
+            }
             // Swap
             this.currentKey = key;
             this.currentStart = this.context.currentTime;
@@ -27,8 +31,8 @@ function DynamicAudioManager() {
                 index++
             }
 
-            let sound = new Sound(this.context, this.buffer.getSoundByIndex(index));
-            sound.play();
+            this.currentPlay = new Sound(this.context, this.buffer.getSoundByIndex(index));
+            this.currentPlay.play();
         }
     }
 
