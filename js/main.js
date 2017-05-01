@@ -92,7 +92,7 @@ window.onload = function() {
 	Crafty.scene("loading", function() {
 		//load takes an array of assets and a callback when complete
 		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png", "images/character-fox-furry.png"], function () {
-			Crafty.scene("plains"); //when everything is loaded, run the main scene
+			Crafty.scene("main"); //when everything is loaded, run the main scene
 		});
 
 		//black background with some loading text
