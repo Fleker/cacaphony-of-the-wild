@@ -62,12 +62,13 @@ function DynamicAudioManager() {
         var src = this.variations[oldkey];
         // Grab time, in minutes.
         // Make sure we add in the previous offset in order to line-up our measures properly. Otherwise we assume the last track started at 0s.
-        var time = (this.context.currentTime - this.currentStart - this.currentOffset) / 60;
+        // So we add our previous offset to inflate the effective time of our music track.
+        var time = (this.context.currentTime - this.currentStart + this.currentOffset) / 60;
         // Measures per minute may change depending on time signature. We assume 4/4.
         var measuresPerMinute = src.bpm / 4;
         var measuresPlayed = time * measuresPerMinute;
         // Take the modulus based on how many measures have been played.
-        var scoreMeasures = 45; // Assume this. It's 44 measures (+1 because of end).
+        var scoreMeasures = 44; // Assume this. It's 44 measures.
         var measuresModulus = measuresPlayed % scoreMeasures;
         // Now compute the start time based on next track.
         var newsrc = this.variations[newkey];
@@ -91,9 +92,10 @@ function DynamicAudioManager() {
         let thisManager = this;
         this.buffer.loadAll(function() {
             if (thisManager.currentKey) {
+                var key = thisManager.currentKey;
                 console.log("Resetting and playing " + thisManager.currentKey);
                 thisManager.reset();
-                thisManager.play(thisManager.currentKey);
+                thisManager.play(key);
             }
         });
     }
