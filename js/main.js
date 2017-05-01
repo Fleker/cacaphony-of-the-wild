@@ -3,11 +3,118 @@ const DIRECTION_UP = 1;
 const DIRECTION_RIGHT = 2;
 const DIRECTION_DOWN = 3;
 
+function DynamicAudioManager() {
+    this.context = new (window.AudioContext || window.webkitAudioContext)();
+    this.currentKey = "";
+    this.currentStart = 0;
+    this.variations = {};
+    this.buffer = undefined;
+
+    this.add = function(dynAudio) {
+        this.variations[dynAudio.key] = dynAudio;
+    }
+
+    this.play = function(key) {
+        if (key != this.currentKey) {
+            // Swap
+            this.currentKey = key;
+            this.currentStart = this.context.currentTime;
+            let index = 0;
+            for (i in this.variations) {
+                if (i.key == key) {
+                    break;
+                }
+                index++
+            }
+
+            let sound = new Sound(this.context, this.buffer.getSoundByIndex(index));
+            sound.play();
+        }
+    }
+
+    this.load = function() {
+        let urls = [];
+        for (i in this.variations) {
+            urls.push(this.variations[i].filename);
+        }
+        this.buffer = new Buffer(this.context, urls);
+        this.buffer.loadAll();
+    }
+}
+
+function DynamicAudio(key, filename, bpm) {
+    this.key = key;
+    this.filename = filename;
+    this.bpm = bpm;
+}
+
+function Buffer(context, urls) {
+    this.context = context;
+    this.urls = urls;
+    this.buffer = [];
+
+    this.loadSound = function(url, index) {
+        let request = new XMLHttpRequest();
+        request.open('get', url, true);
+        request.responseType = 'arraybuffer';
+        let thisBuffer = this;
+        request.onload = function() {
+            thisBuffer.context.decodeAudioData(request.response, function(buffer) {
+                console.log(typeof buffer, typeof thisBuffer);
+                thisBuffer.buffer[index] = buffer;
+                updateProgress(thisBuffer.urls.length);
+                if(index == thisBuffer.urls.length-1) {
+                    thisBuffer.loaded();
+                }
+            });
+        };
+        request.send();
+    };
+
+    this.loadAll = function() {
+        this.urls.forEach((url, index) => {
+            this.loadSound(url, index);
+        })
+    }
+
+    this.loaded = function() {
+        // what happens when all the files are loaded
+    }
+
+    this.getSoundByIndex = function(index) {
+        return this.buffer[index];
+    }
+}
+
+function Sound(context, buffer) {
+    this.context = context;
+    this.buffer = buffer;
+
+    this.init = function() {
+        this.gainNode = this.context.createGain();
+        this.source = this.context.createBufferSource();
+        this.source.buffer = this.buffer;
+        this.source.connect(this.gainNode);
+        this.gainNode.connect(this.context.destination);
+    };
+
+    this.play = function() {
+        this.init();
+        this.source.start(this.context.currentTime);
+    };
+
+    this.stop = function() {
+        this.gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 0.5);
+        this.source.stop(this.context.currentTime + 0.5);
+    }
+}
+
 window.onload = function() {
 	//start crafty
 	Crafty.init(1024, 592);
 	Crafty.canvas.init();
     var currentScene = '';
+    var audioManager = new DynamicAudioManager();
 
 	//turn the sprite map into usable components
     var obj = {};
@@ -66,7 +173,7 @@ window.onload = function() {
                         classes += ", impassable";
                     }
                     if (z == 2) {
-                        classes += ", solid";
+                        classes += ", solid, Collision";
                     }
                     if (z > 2) {
                         classes += ", DOM";
@@ -91,8 +198,14 @@ window.onload = function() {
 	//the loading screen that will display while our assets load
 	Crafty.scene("loading", function() {
 		//load takes an array of assets and a callback when complete
-		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png", "images/character-fox-furry.png"], function () {
-			Crafty.scene("main"); //when everything is loaded, run the main scene
+		Crafty.load(["images/roguelikeSheet_transparent.png", "images/character-hero.png", "images/character-fox-furry.png", "audio/town.ogg", "audio/adventure.ogg", "audio/combat.ogg"], function () {
+            // Start music
+            audioManager.add(new DynamicAudio("town", "audio/town.ogg", 120));
+            audioManager.add(new DynamicAudio("adventure", "audio/adventure.ogg", 100));
+            audioManager.add(new DynamicAudio("combat", "audio/combat.ogg", 150));
+            audioManager.load();
+
+            Crafty.scene("main"); //when everything is loaded, run the main scene
 		});
 
 		//black background with some loading text
@@ -153,7 +266,6 @@ window.onload = function() {
 					// A rudimentary way to prevent the user from passing solid areas
 					.bind('Moved', function(from) {
 						if(this.hit('solid')) {
-                            console.log(this.hit('solid'));
 							this.attr({x: from.x, y: from.y});
 						} else if (this.hit('Enemy')) {
                             console.log("Enemy");
@@ -182,9 +294,10 @@ window.onload = function() {
                     .bind('EnterFrame', function(e) {
                         if (loadDistance() < 64) {
                             // Combat!
-                            console.warn('Enemy Approaching');
+                            audioManager.play("combat");
                         } else {
                             // Adventure
+                            audioManager.play("adventure");
                         }
                     });
 				return this;
@@ -205,7 +318,8 @@ window.onload = function() {
         //create our player entity with some premade components
         player = Crafty.e("2D, DOM, solid, char_hero, Hero, RightControls, Animate, SpriteAnimation, Collision")
             .attr({x: 512, y: 256, z: 2})
-            .rightControls(1);
+            .rightControls(1)
+            .collision([0, 16], [24, 16], [24, 32], [0, 32]);
     }
 
     function releaseMonster() {
@@ -295,6 +409,7 @@ window.onload = function() {
     Crafty.scene("main", function() {
         generateWorld('test');
         currentScene = 'main';
+        audioManager.play("town");
 
         createHero();
     });
@@ -302,6 +417,7 @@ window.onload = function() {
     Crafty.scene("plains", function() {
         generateWorld('plains');
         currentScene = 'plains';
+        audioManager.play("adventure");
 
         createHero();
         releaseMonster();
