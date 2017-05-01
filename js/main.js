@@ -23,17 +23,33 @@ function DynamicAudioManager() {
             // Swap
             this.currentKey = key;
             this.currentStart = this.context.currentTime;
-            let index = 0;
-            for (i in this.variations) {
-                if (i.key == key) {
-                    break;
-                }
-                index++
+            let index = this.findIndexByKey(key);
+            if (index == -1) {
+                console.warn("Sound doesn't exist.");
+                return;
             }
 
+            console.log("Play audio " + index);
             this.currentPlay = new Sound(this.context, this.buffer.getSoundByIndex(index));
             this.currentPlay.play();
         }
+    }
+
+    this.findIndexByKey = function(key) {
+        let index = 0;
+        for (i in this.variations) {
+            console.log(i, key);
+            if (i == key) {
+                return index;
+            }
+            index++
+        }
+        return -1;
+    }
+
+    this.reset = function() {
+        this.currentKey = '';
+        this.currentPlay = undefined;
     }
 
     this.load = function() {
@@ -64,9 +80,8 @@ function Buffer(context, urls) {
         let thisBuffer = this;
         request.onload = function() {
             thisBuffer.context.decodeAudioData(request.response, function(buffer) {
-                console.log(typeof buffer, typeof thisBuffer);
+                console.log(typeof buffer, typeof thisBuffer, buffer);
                 thisBuffer.buffer[index] = buffer;
-                updateProgress(thisBuffer.urls.length);
                 if(index == thisBuffer.urls.length-1) {
                     thisBuffer.loaded();
                 }
@@ -96,6 +111,7 @@ function Sound(context, buffer) {
 
     this.init = function() {
         this.gainNode = this.context.createGain();
+        console.log(typeof this.buffer, this.buffer)
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.connect(this.gainNode);
