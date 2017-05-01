@@ -261,6 +261,7 @@ window.onload = function() {
             audioManager.add(new DynamicAudio("town", "audio/town.ogg", 120));
             audioManager.add(new DynamicAudio("adventure", "audio/adventure.ogg", 100));
             audioManager.add(new DynamicAudio("combat", "audio/combat.ogg", 150));
+            audioManager.load();
 
             Crafty.scene("main"); //when everything is loaded, run the main scene
 		});
