@@ -349,6 +349,9 @@ window.onload = function() {
                         }
                     })
                     .bind('EnterFrame', function(e) {
+                        if (currentScene != "plains") {
+                            return;
+                        }
                         if (loadDistance() < 64) {
                             // Combat!
                             audioManager.play("combat");
