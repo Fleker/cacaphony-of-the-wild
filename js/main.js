@@ -111,6 +111,7 @@ function Buffer(context, urls) {
     this.context = context;
     this.urls = urls;
     this.buffer = [];
+    this.bufferLoaded = 0;
 
     this.loadSound = function(url, index, callback) {
         let request = new XMLHttpRequest();
@@ -121,7 +122,7 @@ function Buffer(context, urls) {
             thisBuffer.context.decodeAudioData(request.response, function(buffer) {
                 console.log(typeof buffer, typeof thisBuffer, buffer);
                 thisBuffer.buffer[index] = buffer;
-                if(index == thisBuffer.urls.length-1) {
+                if(++this.bufferLoaded == thisBuffer.urls.length-1) {
                     console.log("All sounds loaded");
                     callback();
                     thisBuffer.loaded();
@@ -154,16 +155,21 @@ function Sound(context, buffer) {
     this.init = function() {
         this.gainNode = this.context.createGain();
         console.log(typeof this.buffer, this.buffer)
+        if (!this.buffer) {
+            return false;
+        }
         this.source = this.context.createBufferSource();
         this.source.buffer = this.buffer;
         this.source.loop = true;
         this.source.connect(this.gainNode);
         this.gainNode.connect(this.context.destination);
+        return true;
     };
 
     this.play = function(starttime) {
-        this.init();
-        this.source.start(this.context.currentTime, starttime);
+        if (this.init()) {
+            this.source.start(this.context.currentTime, starttime);
+        }
     };
 
     this.stop = function() {
