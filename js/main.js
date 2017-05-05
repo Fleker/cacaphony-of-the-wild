@@ -120,7 +120,7 @@ function Buffer(context, urls) {
         let thisBuffer = this;
         request.onload = function() {
             thisBuffer.context.decodeAudioData(request.response, function(buffer) {
-                console.log(typeof buffer, typeof thisBuffer, buffer);
+                console.log(thisBuffer.bufferLoaded, thisBuffer.urls.length, typeof buffer, typeof thisBuffer, buffer);
                 thisBuffer.buffer[index] = buffer;
                 if (++thisBuffer.bufferLoaded == thisBuffer.urls.length) {
                     console.log("All sounds loaded");
